@@ -8,7 +8,7 @@ OUTPUT_DIR=$(CURDIR)/output
 BUILD_PATH=$(CURDIR)/build
 ROOTFS?=norootfs
 ROOTFS_BASENAME=$(basename $(basename $(ROOTFS)))
-Q=
+Q=$()
 J=$(shell expr `grep ^processor /proc/cpuinfo  | wc -l` \* 2)
 
 include chosen_board.mk
@@ -41,15 +41,25 @@ u-boot: $(U_CONFIG_H)
 $(K_DOT_CONFIG): linux-sunxi/.git
 	$(Q)mkdir -p $(K_O_PATH)
 	$(Q)$(MAKE) -C linux-sunxi O=$(K_O_PATH) ARCH=arm $(KERNEL_CONFIG)
-
+ifeq ($(BOARD), Bananapi)
+	echo "CONFIG_GMAC_FOR_BANANAPI=y" >> $(K_O_PATH)/.config
+endif
+	
 linux: $(K_DOT_CONFIG)
 	$(Q)$(MAKE) -C linux-sunxi O=$(K_O_PATH) ARCH=arm oldconfig
+ifeq ($(BOARD), Bananapi)
+	echo "CONFIG_GMAC_FOR_BANANAPI=y" >> $(K_O_PATH)/.config
+endif
 	$(Q)$(MAKE) -C linux-sunxi O=$(K_O_PATH) ARCH=arm CROSS_COMPILE=${CROSS_COMPILE} -j$J INSTALL_MOD_PATH=output uImage modules
 	$(Q)$(MAKE) -C linux-sunxi O=$(K_O_PATH) ARCH=arm CROSS_COMPILE=${CROSS_COMPILE} -j$J INSTALL_MOD_PATH=output modules_install
+	$(Q)$(MAKE) -C linux-sunxi O=$(K_O_PATH) ARCH=arm CROSS_COMPILE=${CROSS_COMPILE} -j$J headers_install
 	cd $(K_O_PATH) && ${CROSS_COMPILE}objcopy -R .note.gnu.build-id -S -O binary vmlinux bImage
 
 linux-config: $(K_DOT_CONFIG)
 	$(Q)$(MAKE) -C linux-sunxi O=$(K_O_PATH) ARCH=arm menuconfig
+
+setting:
+	$(Q)$(MAKE) -C linux-sunxi ARCH=arm menuconfig
 
 ## script.bin
 script.bin: tools
