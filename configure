@@ -41,10 +41,17 @@ generate_board_mk() {
 		EOT
 		;;
 	a20)
+        if [ $board = Bananapi_lite ]; then
+		cat <<-EOT
+		MACH=sun7i
+		KERNEL_CONFIG=Bananapi_lite_defconfig
+		EOT
+        else
 		cat <<-EOT
 		MACH=sun7i
 		KERNEL_CONFIG=sun7i${android:+_wing}_defconfig
 		EOT
+        fi
 		;;
 	*)
 		echo "$soc: unsupported SoC" >&2
